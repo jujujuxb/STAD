@@ -7,7 +7,6 @@ import stad.typehint as T
 
 
 class TrainerRunTrainValTest:
-
     school: T.Module
     cfg: T.DictConfig
     log: T.Logger
@@ -93,7 +92,6 @@ class TrainerRunTrainValTest:
                 np.save(f, heatmap)
 
     def patchize(self, img: T.Tensor) -> T.Tensor:
-
         """
         img.shape
         B  : batch size
@@ -110,7 +108,8 @@ class TrainerRunTrainValTest:
         pH = self.cfg.patch_size
         pW = self.cfg.patch_size
 
-        unfold = nn.Unfold(kernel_size=(pH, pW), stride=self.cfg.run.test.unfold_stride)
+        unfold = nn.Unfold(kernel_size=(pH, pW),
+                           stride=self.cfg.run.test.unfold_stride)
 
         patches = unfold(img)  # (B, V, P)
         patches = patches.permute(0, 2, 1).contiguous()  # (B, P, V)
@@ -126,58 +125,58 @@ class TrainerRunTrainValTest:
 
         return losses
 
-    def compute_heatmap(self, img: T.Tensor) -> T.NDArray[(T.Any, T.Any), float]:
+    # def compute_heatmap(self, img: T.Tensor):
+    #     """
+    #     img.shape -> (B, C, iH, iW)
+    #     B  : batch size
+    #     C  : channels of image (same to patches.shape[1])
+    #     iH : height of image
+    #     iW : width of image
 
-        """
-        img.shape -> (B, C, iH, iW)
-        B  : batch size
-        C  : channels of image (same to patches.shape[1])
-        iH : height of image
-        iW : width of image
+    #     patches.shape -> (P, C, pH, pW)
+    #     P  : patch size
+    #     C  : channels of image (same to img.shape[1])
+    #     pH : height of patch
+    #     pW : width of patch
+    #     """
 
-        patches.shape -> (P, C, pH, pW)
-        P  : patch size
-        C  : channels of image (same to img.shape[1])
-        pH : height of patch
-        pW : width of patch
-        """
+    #     patches = self.patchize(img)
 
-        patches = self.patchize(img)
+    #     # B, C, iH, iW = img.shape
+    #     # P, C, pH, pW = patches.shape
 
-        B, C, iH, iW = img.shape
-        P, C, pH, pW = patches.shape
+    #     # heatmap = torch.zeros(P)
+    #     # quotient, remainder = divmod(P, self.cfg.run.test.batch_size)
 
-        heatmap = torch.zeros(P)
-        quotient, remainder = divmod(P, self.cfg.run.test.batch_size)
+    #     # for i in range(quotient):
 
-        for i in range(quotient):
+    #     #     start = i * self.cfg.run.test.batch_size
+    #     #     end = start + self.cfg.run.test.batch_size
 
-            start = i * self.cfg.run.test.batch_size
-            end = start + self.cfg.run.test.batch_size
+    #     #     # (self.cfg.run.test.batch_size, C, pH, pW)
+    #     #     patch = patches[start:end, :, :, :]
+    #     #     patch = patch.to(self.cfg.device)
 
-            patch = patches[start:end, :, :, :]  # (self.cfg.run.test.batch_size, C, pH, pW)
-            patch = patch.to(self.cfg.device)
+    #     #     surrogate_label, pred = self.school(patch)
+    #     #     losses = self.compute_squared_l2_distance(pred, surrogate_label)
+    #     #     heatmap[start:end] = losses
 
-            surrogate_label, pred = self.school(patch)
-            losses = self.compute_squared_l2_distance(pred, surrogate_label)
-            heatmap[start:end] = losses
+    #     # patch = patches[-remainder:, :, :, :]
+    #     # patch = patch.to(self.cfg.device)
 
-        patch = patches[-remainder:, :, :, :]
-        patch = patch.to(self.cfg.device)
+    #     # surrogate_label, pred = self.school(patch)
+    #     # losses = self.compute_squared_l2_distance(pred, surrogate_label)
+    #     # heatmap[-remainder:] = losses
 
-        surrogate_label, pred = self.school(patch)
-        losses = self.compute_squared_l2_distance(pred, surrogate_label)
-        heatmap[-remainder:] = losses
+    #     # fold = nn.Fold(
+    #     #     output_size=(iH, iW),
+    #     #     kernel_size=(pH, pW),
+    #     #     stride=self.cfg.run.test.unfold_stride,
+    #     # )
 
-        fold = nn.Fold(
-            output_size=(iH, iW),
-            kernel_size=(pH, pW),
-            stride=self.cfg.run.test.unfold_stride,
-        )
+    #     # heatmap = heatmap.expand(B, pH * pW, P)
+    #     # heatmap = fold(heatmap)
+    #     # heatmap = heatmap.squeeze().numpy()
 
-        heatmap = heatmap.expand(B, pH * pW, P)
-        heatmap = fold(heatmap)
-        heatmap = heatmap.squeeze().numpy()
-
-        del patches
-        return heatmap
+    #     # del patches
+    #     # return heatmap

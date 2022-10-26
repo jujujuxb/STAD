@@ -40,34 +40,34 @@ def get_models(backbone, t_net_path, s_net_path, is_test=False):
     return t_net, s_net
 
 
-def get_models(backbone, t_net_path, s_net_paths, is_test=False):
+# def get_models(backbone, t_net_path, s_net_paths, is_test=False):
 
-    t_net = None
-    s_nets = []
+#     t_net = None
+#     s_nets = []
 
-    assert ((not is_test) or os.path.exists(t_net_path))
+#     assert ((not is_test) or os.path.exists(t_net_path))
 
-    if is_test:
-        for s_net_path in s_net_paths:
-            assert (os.path.exists(s_net_path))
+#     if is_test:
+#         for s_net_path in s_net_paths:
+#             assert (os.path.exists(s_net_path))
 
-    if t_net_path is not None and os.path.exists(t_net_path):
-        t_net = torch.load(t_net_path)
-        print("t-net load from :", t_net_path)
-    else:
-        t_net = get_backbone(backbone)(pretrained=True)
+#     if t_net_path is not None and os.path.exists(t_net_path):
+#         t_net = torch.load(t_net_path)
+#         print("t-net load from :", t_net_path)
+#     else:
+#         t_net = get_backbone(backbone)(pretrained=True)
 
-    for s_net_path in track(s_net_paths, description="Load stu models:"):
-        if s_net_path is not None and os.path.exists(s_net_path):
-            s_net = torch.load(s_net_path)
-            s_nets.append(s_net)
-            print("s-net load from :", s_net_path)
-        else:
-            s_net = get_backbone(backbone)(pretrained=False)
-            s_nets.append(s_net)
-            print("s-net init self")
+#     for s_net_path in track(s_net_paths, description="Load stu models:"):
+#         if s_net_path is not None and os.path.exists(s_net_path):
+#             s_net = torch.load(s_net_path)
+#             s_nets.append(s_net)
+#             print("s-net load from :", s_net_path)
+#         else:
+#             s_net = get_backbone(backbone)(pretrained=False)
+#             s_nets.append(s_net)
+#             print("s-net init self")
 
-    return t_net, s_nets
+#     return t_net, s_nets
 
 
 if __name__ == '__main__':

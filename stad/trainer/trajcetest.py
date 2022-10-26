@@ -27,13 +27,14 @@ def test(test_loader, backbone, threahold=1.0):
     if not os.path.exists(root_path):
         os.mkdir(root_path)
 
+    # "1_2_3_4_5_6_15_net.pth"
+
     t_net_path = os.path.join(root_path, "t_net.pth")
     s_net_path = os.path.join(root_path, "s_net.pth")
 
     t_net, s_net = get_models(backbone, t_net_path, s_net_path)
 
     t_net.to(device)
-
     s_net.to(device)
 
     t_net.eval()
@@ -57,19 +58,18 @@ def test(test_loader, backbone, threahold=1.0):
     return classes, losses
 
 
-def plot_results(classes, losses, types, threhold=100.0):
+def plot_results(classes, losses, types, lists=None, threhold=2.1):
     losses = np.array(losses)
     digits = np.array(classes)
     loss_dict = {}
 
     w = (types + 1) * 5
-
     h = types
-
     percents = []
-
     plt.figure(figsize=(w, h))
     for i in range(1, types+1):
+        if lists is not None and not i in lists:
+            continue
         plt.subplot(types+1, 1, i)
         cur_losses = losses[digits == i]
         plt.hist(cur_losses, label=str(i), bins=100, color='k', alpha=0.4)
@@ -82,7 +82,6 @@ def plot_results(classes, losses, types, threhold=100.0):
             i), bins=100, color=color, alpha=0.4)
         t = (losses[digits == i] <= threhold).sum() / len(losses[digits == i])
         percents.append(t)
-
     plt.legend()
     plt.xlabel('L2 Loss')
     plt.ylabel('Frequency')

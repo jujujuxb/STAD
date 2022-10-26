@@ -14,69 +14,32 @@ def main(args):
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = False
 
-    s_names = [
-        "1_2_3_4_5_6_15", "7_8", "9_13", "10_11_12_14"
-    ]
-
-    train_dataset_1 = TrajectoryDataset(
-        dataset_dir=args.tdatapath, labels={1, 2, 3, 4, 5, 6, 15})
-
-    train_dataset_2 = TrajectoryDataset(
-        dataset_dir=args.tdatapath, labels={7, 8})
-
-    train_dataset_3 = TrajectoryDataset(
-        dataset_dir=args.tdatapath, labels={9, 13})
-
-    train_dataset_4 = TrajectoryDataset(
-        dataset_dir=args.tdatapath, labels={10, 11, 12, 14})
-
-    train_datasets = [
-        train_dataset_1, train_dataset_2, train_dataset_3, train_dataset_4
-    ]
-
-    # valid_dataset_1 = TrajectoryDataset(
-    #     dataset_dir=args.vdatapath, labels={1, 2, 3, 4, 5, 6, 15})
-
-    # valid_dataset_2 = TrajectoryDataset(
-    #     dataset_dir=args.vdatapath, labels={7, 8})
-
-    # valid_dataset_3 = TrajectoryDataset(
-    #     dataset_dir=args.vdatapath, labels={9, 13})
-
-    # valid_dataset_4 = TrajectoryDataset(
-    #     dataset_dir=args.vdatapath, labels={10, 11, 12, 14})
-
-    # valid_datasets = [
-    #     valid_dataset_1, valid_dataset_2, valid_dataset_3, valid_dataset_4
-    # ]
+    train_dataset = TrajectoryDataset(
+        dataset_dir=args.vdatapath, labels={1, 2, 3})
 
     batch_size = 1
 
-    train_loaders = []
-
-    valid_loaders = []
-
-    for train_dataset in train_datasets:
-        train_loader = torch.utils.data.DataLoader(
-            train_dataset, shuffle=True, batch_size=batch_size)
-        train_loaders.append(train_loader)
-
-    # for valid_dataset in valid_datasets:
-    #     valid_loader = torch.utils.data.DataLoader(
-    #         valid_dataset, shuffle=False, batch_size=1)
-    #     valid_loaders.append(valid_loader)
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset, shuffle=True, batch_size=batch_size)
 
     model_path = os.path.join(os.getcwd(), "models")
 
     if not os.path.exists(model_path):
         os.mkdir(model_path)
 
-    train_more_stus(train_loaders, valid_loaders, s_names,
-                    args.backbone, args.epochs, args.lr)
+    calsses, losses = test(test_loader=train_loader,
+                           backbone=args.backbone, threahold=6.0)
 
-    # calsses, losses = test(test_loader=train_loader, backbone=args.backbone)
+    plot_results(classes=calsses, losses=losses, lists={
+                 1, 2, 3}, types=15)
 
-    # plot_results(classes=calsses, losses=losses, types=15)
+    tt = sorted(losses)
+
+    c = (int)(len(losses) * 0.05)
+
+    print(tt[-1], tt[-c])
+
+    pass
 
 
 if __name__ == "__main__":
@@ -100,7 +63,11 @@ if __name__ == "__main__":
                         default="/home/juxiaobing/code/GraduationProject/CNN-VAE/data/T15/train", help="dataset's path")
 
     parser.add_argument('--vdatapath', type=str,
-                        default="/home/juxiaobing/code/GraduationProject/CNN-VAE/data/T15/test", help="dataset's path")
+                        default="/home/juxiaobing/code/GraduationProject/CNN-VAE/data/T15/anatation_images", help="dataset's path")
+
+    # /home/juxiaobing/code/GraduationProject/CNN-VAE/data/T15/anatation_images
+
+    # /home/juxiaobing/code/GraduationProject/CNN-VAE/data/T15/test
 
     parser.add_argument('--batch_size', type=int, default=4)
 

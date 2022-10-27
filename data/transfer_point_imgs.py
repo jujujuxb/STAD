@@ -105,8 +105,8 @@ def transfer_point_images(imgs, x, y):
     # print(num_data)
     # print y
     # print t
-    x_coord = np.array(x)
-    y_coord = np.array(y)
+    x_coord = np.array(x, np.int8)
+    y_coord = np.array(y, np.int8)
     x[:] = [val for val in x]
     # t[:] = [x - t[0] for x in t] # subtract from the first value to get offset of time
     t = np.arange(num_data)

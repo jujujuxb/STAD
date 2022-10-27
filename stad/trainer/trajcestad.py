@@ -7,7 +7,7 @@ from rich.progress import track
 from rich import print
 
 
-def train(train_loader, backbone, epochs=1000, l_r=0.0001, w_d=0.000001):
+def train(train_loader, abnormal_loader=None, backbone="resnet101", epochs=1000, l_r=0.0001, w_d=0.000001):
 
     device = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 
@@ -54,8 +54,25 @@ def train(train_loader, backbone, epochs=1000, l_r=0.0001, w_d=0.000001):
             optimizer.step()
             total_loss = total_loss + loss.item()
 
-        logger.info("Epoch:{epoch},Loss:{loss}".format(
-            epoch=epoch, loss=(total_loss / total_iters)))
+        total_ab_loss = 0
+        total_ab_iters = 0
+        for data in abnormal_loader:
+            img = data[0].to(device)
+            with torch.no_grad():
+                surrogate_label = t_net(img)
+            optimizer.zero_grad()
+            pred = s_net(img)
+            loss_ = criterion(pred, surrogate_label)
+            ones = torch.ones_like(loss_)
+            loss = torch.div(ones, loss_)
+            loss.backward()
+            optimizer.step()
+            total_ab_loss = total_ab_loss + loss.item()
+            total_ab_iters = total_ab_iters + 1
+
+        logger.info("Epoch:{epoch},NormLoss:{loss},abNormLoss:{abloss}".format(
+            epoch=epoch, loss=(total_loss / total_iters), abloss=(total_ab_loss/total_ab_iters)))
+
         if t_net_path is not None:
             torch.save(t_net, t_net_path)
             torch.save(s_net, s_net_path)

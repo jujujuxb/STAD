@@ -9,6 +9,9 @@ import numpy as np
 import tqdm
 from rich.progress import track
 from rich import print
+import data.transfer_point_imgs as tpimg
+import random
+from matplotlib import pyplot as plt
 
 
 class TrajectoryDataset(torch.utils.data.Dataset):
@@ -46,9 +49,67 @@ class TrajectoryDataset(torch.utils.data.Dataset):
         if need_trasform:
             cvimg = cv2.cvtColor(cvimg, cv2.COLOR_BGR2RGB)
 
-        # cvimg = cv2.resize(cvimg, (64, 64))
+        cvimg = np.transpose(np.array(cvimg, np.float32), [2, 0, 1])
 
-        # cvimg = cv2.normalize(cvimg, 0, 1, norm_type=cv2.NORM_MINMAX)
+        return cvimg
+
+    def __len__(self):
+        return self.length
+
+    def __getitem__(self, idx: int):
+        if idx not in self.img_dicts:
+            self.img_dicts[idx] = self.read_img(self.img_labels_[idx][0])
+        return self.img_dicts[idx], self.img_labels_[idx][1]
+
+
+class TrajectoryPointDataset(torch.utils.data.Dataset):
+
+    def __init__(self, dataset_dir="", img_path="/home/juxiaobing/code/GraduationProject/CNN-VAE/data/QMUL/qmul_bg.png", labels: SortedSet = {1}, is_normal=True):
+
+        self.extract_labels = labels
+        self.dataset_dir = dataset_dir
+        self.length = 0
+        self.img_labels_ = self.get_labels()
+        self.img_dicts = {}
+        self.is_normal = is_normal
+        self.hsg_img = tpimg.read_img(img_path)
+        self.read_imgs()
+
+    def get_labels(self):
+        class_dirs = os.path.join(self.dataset_dir, '*')
+        paths = glob.glob(class_dirs)
+        labels = []
+        for path in paths:
+            label = (int)(path.split('/')[-1])
+            if label in self.extract_labels:
+                img_paths = glob.glob(os.path.join(path, '*.txt'))
+                for img_path in img_paths:
+                    labels.append([img_path, label])
+                self.length += len(img_paths)
+        return labels
+
+    def read_imgs(self):
+        for idx in track(range(self.length), description="Load Images({labels}) :".format(labels=str(self.extract_labels))):
+            x, y = tpimg.read_points(self.img_labels_[idx][0])
+            if not self.is_normal:
+                types = random.randint(1, 2)
+                if types == 1:
+                    x, y = tpimg.random_crop(x, y, True)
+                else:
+                    x, y = tpimg.half_cut(x, y)
+            img = cv2.cvtColor(tpimg.transfer_point_images(
+                self.hsg_img, x, y)[1], cv2.COLOR_BGR2RGB)
+            # img = tpimg.transfer_point_images(
+            #     self.hsg_img, x, y)[1]
+            self.img_dicts[idx] = np.transpose(
+                np.array(img, np.float32), [2, 0, 1])
+
+    def read_img(self, img_path, need_trasform=True):
+
+        cvimg = cv2.imread(img_path)
+
+        if need_trasform:
+            cvimg = cv2.cvtColor(cvimg, cv2.COLOR_BGR2RGB)
 
         cvimg = np.transpose(np.array(cvimg, np.float32), [2, 0, 1])
 
@@ -64,6 +125,16 @@ class TrajectoryDataset(torch.utils.data.Dataset):
 
 
 if __name__ == '__main__':
-    data = TrajectoryDataset(labels={1})
+    data = TrajectoryPointDataset(
+        dataset_dir="/home/juxiaobing/code/GraduationProject/CNN-VAE/data/T15/T15_Trajectories", labels={1})
 
-    pass
+    img_, label_ = data.__getitem__(0)
+
+    img_ = np.transpose(img_, [1, 2, 0])
+
+    img = cv2.cvtColor(img_, cv2.COLOR_BGR2RGB)
+    plt.figure()
+    plt.subplot(2, 1, 1)
+    plt.subplot(2, 1, 2)
+    plt.imshow(img.astype(np.int8))
+    plt.show()
